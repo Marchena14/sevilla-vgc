@@ -54,34 +54,7 @@ function renderFeatured(){const upcoming=sorted(events.filter(e=>!isPast(e))).sl
 function renderStats(){ $("#stat-events").textContent=events.length; $("#stat-stores").textContent=new Set(events.map(e=>e.store)).size; }
 function renderList(){const status=$("#status-filter").value,store=$("#store-filter").value,type=$("#type-filter").value,q=$("#search-filter").value.trim().toLowerCase();const filtered=sorted(events).filter(e=>(!status||(status==="past"?isPast(e):!isPast(e)))&&(!store||e.store===store)&&(!type||e.type===type)&&(!q||[e.store,e.name,e.type].join(" ").toLowerCase().includes(q)));$("#all-events").innerHTML=filtered.map(listRow).join("");$("#result-count").textContent=`${filtered.length} ${filtered.length===1?"EVENTO":"EVENTOS"}`;$("#empty-state").hidden=filtered.length>0;}
 function populateStores(){const sel=$("#store-filter"),v=sel.value;sel.innerHTML='<option value="">Todas las tiendas</option>'+[...new Set(events.map(e=>e.store))].sort().map(s=>`<option>${esc(s)}</option>`).join("");sel.value=v;}
-function renderCalendar(){
- const y=currentMonth.getFullYear(),m=currentMonth.getMonth();
- $("#month-label").textContent=currentMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).toUpperCase();
- const first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),prevDays=new Date(y,m,0).getDate();
- let html="";
- for(let i=0;i<42;i++){
-  let day,month=m+1,year=y,muted=false;
-  if(i<start){day=prevDays-start+i+1;month=m;muted=true;}
-  else if(i>=start+days){day=i-start-days+1;month=m+2;muted=true;}
-  else day=i-start+1;
-  if(month===0){month=12;year=y-1;}
-  if(month===13){month=1;year=y+1;}
-  const d=`${year}-${pad(month)}-${pad(day)}`;
-  const ev=sorted(events.filter(e=>normalizeDate(e.date)===d));
-  const selected=selectedDate===d;
-  const dots=ev.slice(0,2).map(e=>`<span class="day-event ${typeClass(e.type)} ${isPast(e)?"past":""}">${esc(e.store)} · ${esc(e.type)}</span>`).join("");
-  html+=`<button class="calendar-day ${muted?"muted":""} ${selected?"selected":""}" data-date="${d}"><span class="day-number">${day}</span>${dots}${ev.length>2?`<span class="more-events">+${ev.length-2} más</span>`:""}</button>`;
- }
- $("#calendar-grid").innerHTML=html;
- $("#calendar-grid").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDay();}));
- // En móvil mostramos una agenda mensual legible, ya que las celdas de siete columnas no tienen ancho suficiente para los nombres.
- const monthEvents=sorted(events.filter(e=>{const d=normalizeDate(e.date);return d&&d.slice(0,7)===`${y}-${pad(m+1)}`;}));
- const agenda=$("#mobile-calendar-events");
- if(agenda){
-  agenda.innerHTML=monthEvents.length?`<div class="mobile-agenda-heading">TORNEOS DE ${currentMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).toUpperCase()}</div><div class="mobile-agenda-list">${monthEvents.map(e=>{const d=dateObj(e.date);const date=normalizeDate(e.date);const past=isPast(e);return `<button type="button" class="mobile-agenda-item type-${typeClass(e.type)} ${past?"is-past":""} ${selectedDate===date?"is-selected":""}" data-date="${date}"><span class="mobile-agenda-date"><strong>${d.getDate()}</strong><small>${d.toLocaleDateString("es-ES",{weekday:"short"}).replace(".","").toUpperCase()}</small></span><span class="mobile-agenda-info"><strong>${esc(e.store)}</strong><span>${esc(eventTitle(e))} · ${esc(e.type)}${e.time?` · ${esc(e.time)}`:""}</span>${e.winner?`<small class="winner-line">🏆 Ganador: ${esc(e.winner)}</small>`:""}</span><span class="mobile-agenda-status">${past?"REALIZADO":"PRÓXIMO"}</span></button>`;}).join("")}</div>`:`<div class="mobile-agenda-heading">TORNEOS DE ESTE MES</div><p class="mobile-agenda-empty">No hay torneos publicados para este mes.</p>`;
-  agenda.querySelectorAll("button[data-date]").forEach(b=>b.addEventListener("click",()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDay();}));
- }
-}
+function renderCalendar(){const y=currentMonth.getFullYear(),m=currentMonth.getMonth();$("#month-label").textContent=currentMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).toUpperCase();const first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),prevDays=new Date(y,m,0).getDate();let html="";for(let i=0;i<42;i++){let day,month=m+1,year=y,muted=false;if(i<start){day=prevDays-start+i+1;month=m;muted=true;}else if(i>=start+days){day=i-start-days+1;month=m+2;muted=true;}else day=i-start+1;if(month===0){month=12;year=y-1;}if(month===13){month=1;year=y+1;}const d=`${year}-${pad(month)}-${pad(day)}`,ev=sorted(events.filter(e=>normalizeDate(e.date)===d));const selected=selectedDate===d;const dots=ev.slice(0,2).map(e=>`<span class="day-event ${typeClass(e.type)} ${isPast(e)?"past":""}">${esc(e.store)} · ${esc(e.type)}</span>`).join("");html+=`<button class="calendar-day ${muted?"muted":""} ${selected?"selected":""}" data-date="${d}"><span class="day-number">${day}</span>${dots}${ev.length>2?`<span class="more-events">+${ev.length-2} más</span>`:""}</button>`;}$("#calendar-grid").innerHTML=html;$("#calendar-grid").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDay();}));}
 function renderSelectedDay(){const host=$("#selected-day-events");if(!selectedDate){host.innerHTML="";return;}const ev=sorted(events.filter(e=>normalizeDate(e.date)===selectedDate));host.innerHTML=ev.length?`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><div class="selected-day-list">${ev.map(e=>`<div class="selected-day-event"><span>${esc(e.store)} · ${esc(eventTitle(e))}${e.time?` · ${esc(e.time)}`:""}</span>${e.winner?`<span class="winner-line">🏆 Ganador: <strong>${esc(e.winner)}</strong></span>`:""}${isPast(e)?'<span class="status-pill">REALIZADO</span>':registerLink(e,"selected-register")}</div>`).join("")}</div></div>`:`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><span>No hay torneos publicados para este día.</span></div>`;}
 function parseCSV(text){
  const rows=[];let row=[],cell="",quoted=false;
