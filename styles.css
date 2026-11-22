@@ -15,3 +15,12 @@
 .selected-register{margin-left:auto;color:#2d65a2;font-size:9px;font-weight:800}
 @media(max-width:600px){.selected-day-event{align-items:flex-start;flex-direction:column;gap:6px}.selected-register{margin-left:0}}
 .day-event.past{opacity:.48;filter:grayscale(1)}
+
+/* Modalidades de fin de semana */
+.event-card.type-regional .card-topline{background:#8056c7}
+.event-card.type-regional .type-pill{background:#f0eafb;color:#6840a8}
+.event-card.type-special-event .card-topline{background:#d49b24}
+.event-card.type-special-event .type-pill{background:#fff5d9;color:#8b6410}
+.day-event.regional{border-color:#8056c7;background:#f0eafb;color:#6840a8}
+.day-event.special-event{border-color:#d49b24;background:#fff5d9;color:#8b6410}
+.dot-regional{background:#8056c7}.dot-special-event{background:#d49b24}

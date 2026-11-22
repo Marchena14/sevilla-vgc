@@ -1,30 +1,22 @@
-# Sevilla VGC — calendario de torneos
+# Actualización Sevilla VGC: torneos de fin de semana
 
-Web estática responsive para publicar los torneos VGC de Sevilla. Incluye calendario mensual, filtros, enlaces de inscripción, ganadores y estado automático de torneos realizados.
+Esta versión recupera el calendario anterior a la prueba de agenda móvil e incorpora torneos de varios días.
 
-## Administrar torneos con Google Sheets
+## Instalación
+Sustituye en la raíz del repositorio de GitHub:
+- `index.html`
+- `app.js`
+- `styles.css`
 
-La página lee una pestaña de Google Sheets publicada como CSV. Conserva los encabezados y añade una columna `ganador` al final:
+No sustituyas `config.js` ni tu hoja CSV actual.
 
-`fecha, tienda, modalidad, hora, precio, inscripcion, nombre, ganador`
+## Nueva columna de Google Sheets
+Añade `fecha_fin` a la cabecera. Ejemplo:
+`fecha,fecha_fin,tienda,modalidad,hora,precio,inscripcion,nombre,ganador`
 
-- `fecha`: fecha del torneo. Admite `AAAA-MM-DD` o `DD/MM/AAAA`.
-- `tienda`: tienda organizadora.
-- `modalidad`: Challenge, Cup o Especial.
-- `hora`: por ejemplo 10:00.
-- `precio`: por ejemplo 6 €.
-- `inscripcion`: enlace de inscripción o información.
-- `nombre`: título del evento, por ejemplo Especial Navidad.
-- `ganador`: nombre del ganador. Se puede dejar vacío antes del torneo.
+Para torneos de un día, deja `fecha_fin` vacía o repite la fecha de inicio.
+Para Regionales y Special Events, indica el último día del evento.
 
-Para publicar la hoja: Google Sheets → Archivo → Compartir → Publicar en la web → selecciona la pestaña → CSV. Copia la URL CSV en `SHEET_CSV_URL` dentro de `config.js`. No reemplaces tu `config.js` actual si ya contiene esa URL.
+Modalidades admitidas: Challenge, Cup, Especial, Regional y Special Event.
 
-Los torneos anteriores a la fecha actual se etiquetan automáticamente como **REALIZADO** y dejan de mostrar el enlace de inscripción en el listado. Los próximos aparecen normalmente. Al añadir el ganador en la columna `ganador`, se muestra en el detalle del día y en el listado.
-
-## Publicar en GitHub Pages
-
-Sube los archivos a la raíz del repositorio y activa Settings → Pages → Deploy from a branch → `main` → `/(root)`.
-
-## Actualizaciones de datos
-
-Los cambios de Google Sheets se reflejan cuando se vuelve a cargar la página y Google actualiza la publicación CSV. Puede haber un pequeño retraso.
+Los eventos de varios días se mantienen como un único torneo en el listado y en las tarjetas, pero aparecen en cada día que ocupan dentro del calendario. El estado Realizado se calcula cuando ha pasado la fecha final.
