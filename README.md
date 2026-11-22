@@ -17,6 +17,8 @@ Añade `fecha_fin` a la cabecera. Ejemplo:
 Para torneos de un día, deja `fecha_fin` vacía o repite la fecha de inicio.
 Para Regionales y Special Events, indica el último día del evento.
 
-Modalidades admitidas: Challenge, Cup, Especial, Regional y Special Event.
+Modalidades admitidas: Challenge, Cup, Especial, Regional, Special Event e Internacional.
+
+Internacional identifica los Campeonatos Internacionales, una categoría destacada visualmente por encima de Regional y Special Event.
 
 Los eventos de varios días se mantienen como un único torneo en el listado y en las tarjetas, pero aparecen en cada día que ocupan dentro del calendario. El estado Realizado se calcula cuando ha pasado la fecha final.

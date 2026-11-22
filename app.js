@@ -45,10 +45,10 @@ const pad = n => String(n).padStart(2,"0");
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const fmtDate = s => dateObj(s).toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"});
 const fmtShort = s => dateObj(s).toLocaleDateString("es-ES",{day:"2-digit",month:"short"}).replace(".","").toUpperCase();
-const typeClass = t => {const v=String(t).toLowerCase();return v==="cup"?"cup":v==="especial"?"special":v==="regional"?"regional":v==="special event"?"special-event":"challenge";};
+const typeClass = t => {const v=String(t).toLowerCase();return v==="cup"?"cup":v==="especial"?"special":v==="regional"?"regional":v==="special event"?"special-event":v==="internacional"?"internacional":"challenge";};
 const typeLabel = t => t==="Especial"?"Especial":t;
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function eventTitle(e){return e.name || (e.type==="Cup"?"League Cup":e.type==="Challenge"?"League Challenge":e.type==="Regional"?"Regional":e.type==="Special Event"?"Special Event":"Evento especial");}
+function eventTitle(e){return e.name || (e.type==="Cup"?"League Cup":e.type==="Challenge"?"League Challenge":e.type==="Regional"?"Regional":e.type==="Special Event"?"Special Event":e.type==="Internacional"?"Campeonato Internacional":"Evento especial");}
 function sorted(list){return [...list].sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));}
 function registerLink(e,cls="register-link"){return e.url?`<a class="${cls}" href="${esc(e.url)}" target="_blank" rel="noopener">INSCRIPCIÓN / INFO <span>↗</span></a>`:`<span class="${cls} disabled">ENLACE PRÓXIMAMENTE</span>`;}
 function card(e){return `<article class="event-card type-${typeClass(e.type)}"><div class="card-topline"></div><div class="card-body"><div class="card-meta"><span class="type-pill">${esc(typeLabel(e.type))}</span><span class="card-date">${esc(eventEnd(e)!==normalizeDate(e.date)?`${fmtShort(e.date)} – ${fmtShort(eventEnd(e))}`:fmtShort(e.date))}</span></div><h3>${esc(e.store)}</h3><div class="event-subtitle">${esc(eventTitle(e))}</div><div class="card-details"><span>◷ ${esc(e.time||"Hora por confirmar")}</span><span>€ ${esc(e.price||"Precio por confirmar")}</span></div></div><div class="card-footer">${registerLink(e)}</div></article>`;}
