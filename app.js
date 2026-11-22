@@ -18,10 +18,26 @@ const fallbackEvents = [
  {date:"2027-02-14",store:"Holoplaza",type:"Cup",time:"10:00",price:"",url:"",name:"League Cup"}
 ];
 let events = [...fallbackEvents];
-let currentMonth = new Date(2026,10,1);
+let currentMonth = new Date(new Date().getFullYear(),new Date().getMonth(),1);
 let selectedDate = null;
 const $ = s => document.querySelector(s);
-const dateObj = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+// Normaliza fechas procedentes de CSV de Google Sheets (ISO, DD/MM/AAAA o serial de Excel).
+function normalizeDate(value){
+ const s=String(value??"").trim();
+ if(!s) return "";
+ let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+ if(m) return `${m[1]}-${pad(Number(m[2]))}-${pad(Number(m[3]))}`;
+ m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+ if(m) return `${m[3]}-${pad(Number(m[2]))}-${pad(Number(m[1]))}`;
+ if(/^\d+(\.\d+)?$/.test(s)){
+  const serial=Number(s);
+  if(serial>20000 && serial<80000){const d=new Date(Date.UTC(1899,11,30)+serial*86400000);return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;}
+ }
+ return "";
+}
+const dateObj = s => { const normalized=normalizeDate(s); if(!normalized)return new Date(NaN); const [y,m,d]=normalized.split("-").map(Number); return new Date(y,m-1,d); };
+const todayISO = () => {const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+const isPast = e => normalizeDate(e.date) < todayISO();
 const pad = n => String(n).padStart(2,"0");
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const fmtDate = s => dateObj(s).toLocaleDateString("es-ES",{day:"numeric",month:"long",year:"numeric"});
@@ -33,14 +49,31 @@ function eventTitle(e){return e.name || (e.type==="Cup"?"League Cup":e.type==="C
 function sorted(list){return [...list].sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));}
 function registerLink(e,cls="register-link"){return e.url?`<a class="${cls}" href="${esc(e.url)}" target="_blank" rel="noopener">INSCRIPCIÓN / INFO <span>↗</span></a>`:`<span class="${cls} disabled">ENLACE PRÓXIMAMENTE</span>`;}
 function card(e){return `<article class="event-card type-${typeClass(e.type)}"><div class="card-topline"></div><div class="card-body"><div class="card-meta"><span class="type-pill">${esc(typeLabel(e.type))}</span><span class="card-date">${esc(fmtShort(e.date))}</span></div><h3>${esc(e.store)}</h3><div class="event-subtitle">${esc(eventTitle(e))}</div><div class="card-details"><span>◷ ${esc(e.time||"Hora por confirmar")}</span><span>€ ${esc(e.price||"Precio por confirmar")}</span></div></div><div class="card-footer">${registerLink(e)}</div></article>`;}
-function listRow(e){const d=dateObj(e.date);return `<article class="list-event"><div class="list-date"><strong>${d.getDate()}</strong><span>${d.toLocaleDateString("es-ES",{month:"short"}).replace(".","").toUpperCase()}</span></div><div class="list-main"><h3>${esc(e.store)} · ${esc(eventTitle(e))}</h3><p>${esc(fmtDate(e.date))} · ${esc(e.time||"Hora por confirmar")} · ${esc(e.type)}</p></div><div class="list-tags"><span class="type-pill">${esc(e.type)}</span><span class="list-price">${esc(e.price||"Precio por confirmar")}</span></div>${registerLink(e,"list-action")}</article>`;}
-function renderFeatured(){const now= new Date();now.setHours(0,0,0,0);const upcoming=sorted(events.filter(e=>dateObj(e.date)>=now)).slice(0,3);$("#featured-events").innerHTML=upcoming.length?upcoming.map(card).join(""):`<div class="empty-state">No hay próximos torneos publicados.</div>`;}
+function listRow(e){const d=dateObj(e.date),past=isPast(e);return `<article class="list-event ${past?"is-past":""}"><div class="list-date"><strong>${d.getDate()}</strong><span>${d.toLocaleDateString("es-ES",{month:"short"}).replace(".","").toUpperCase()}</span></div><div class="list-main"><h3>${esc(e.store)} · ${esc(eventTitle(e))}</h3><p>${esc(fmtDate(e.date))} · ${esc(e.time||"Hora por confirmar")} · ${esc(e.type)}</p>${e.winner?`<p class="winner-line">🏆 Ganador: <strong>${esc(e.winner)}</strong></p>`:""}</div><div class="list-tags"><span class="type-pill">${esc(e.type)}</span><span class="list-price">${esc(e.price||"Precio por confirmar")}</span>${past?'<span class="status-pill">REALIZADO</span>':""}</div>${past?'<span class="list-action completed-label">TORNEO REALIZADO</span>':registerLink(e,"list-action")}</article>`;}
+function renderFeatured(){const upcoming=sorted(events.filter(e=>!isPast(e))).slice(0,3);$("#featured-events").innerHTML=upcoming.length?upcoming.map(card).join(""):`<div class="empty-state">No hay próximos torneos publicados.</div>`;}
 function renderStats(){ $("#stat-events").textContent=events.length; $("#stat-stores").textContent=new Set(events.map(e=>e.store)).size; }
 function renderList(){const store=$("#store-filter").value,type=$("#type-filter").value,q=$("#search-filter").value.trim().toLowerCase();const filtered=sorted(events).filter(e=>(!store||e.store===store)&&(!type||e.type===type)&&(!q||[e.store,e.name,e.type].join(" ").toLowerCase().includes(q)));$("#all-events").innerHTML=filtered.map(listRow).join("");$("#result-count").textContent=`${filtered.length} ${filtered.length===1?"EVENTO":"EVENTOS"}`;$("#empty-state").hidden=filtered.length>0;}
 function populateStores(){const sel=$("#store-filter"),v=sel.value;sel.innerHTML='<option value="">Todas las tiendas</option>'+[...new Set(events.map(e=>e.store))].sort().map(s=>`<option>${esc(s)}</option>`).join("");sel.value=v;}
-function renderCalendar(){const y=currentMonth.getFullYear(),m=currentMonth.getMonth();$("#month-label").textContent=currentMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).toUpperCase();const first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),prevDays=new Date(y,m,0).getDate();let html="";for(let i=0;i<42;i++){let day,month=y,year=y,muted=false;if(i<start){day=prevDays-start+i+1;month=m;muted=true;}else if(i>=start+days){day=i-start-days+1;month=m+2;muted=true;}else day=i-start+1;if(month===0){month=12;year=y-1;}if(month===13){month=1;year=y+1;}const d=`${year}-${pad(month)}-${pad(day)}`,ev=sorted(events.filter(e=>e.date===d));const selected=selectedDate===d;const dots=ev.slice(0,2).map(e=>`<span class="day-event ${typeClass(e.type)}">${esc(e.store)} · ${esc(e.type)}</span>`).join("");html+=`<button class="calendar-day ${muted?"muted":""} ${selected?"selected":""}" data-date="${d}"><span class="day-number">${day}</span>${dots}${ev.length>2?`<span class="more-events">+${ev.length-2} más</span>`:""}</button>`;}$("#calendar-grid").innerHTML=html;$("#calendar-grid").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDay();}));}
-function renderSelectedDay(){const host=$("#selected-day-events");if(!selectedDate){host.innerHTML="";return;}const ev=sorted(events.filter(e=>e.date===selectedDate));host.innerHTML=ev.length?`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><span>${ev.map(e=>`${esc(e.store)} · ${esc(e.type)}${e.time?" · "+esc(e.time):""}`).join(" &nbsp; | &nbsp; ")}</span></div>`:`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><span>No hay torneos publicados para este día.</span></div>`;}
-function parseCSV(text){const rows=[];let row=[],cell="",quoted=false;for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'&&quoted&&n==='"'){cell+='"';i++;}else if(c==='"'){quoted=!quoted;}else if(c===","&&!quoted){row.push(cell);cell="";}else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&n==="\n")i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell="";}else cell+=c;}row.push(cell);if(row.some(x=>x.trim()))rows.push(row);const headers=rows.shift().map(x=>x.trim().toLowerCase());return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]||"").trim()]))).filter(r=>r.fecha||r.date).map(r=>({date:r.fecha||r.date,store:r.tienda||r.store,type:r.modalidad||r.tipo||r.type,time:r.hora||r.time,price:r.precio||r.price,url:r.inscripcion||r.enlace||r.url,name:r.nombre||r.torneo||r.name||""}));}
+function renderCalendar(){const y=currentMonth.getFullYear(),m=currentMonth.getMonth();$("#month-label").textContent=currentMonth.toLocaleDateString("es-ES",{month:"long",year:"numeric"}).toUpperCase();const first=new Date(y,m,1),start=(first.getDay()+6)%7,days=new Date(y,m+1,0).getDate(),prevDays=new Date(y,m,0).getDate();let html="";for(let i=0;i<42;i++){let day,month=y,year=y,muted=false;if(i<start){day=prevDays-start+i+1;month=m;muted=true;}else if(i>=start+days){day=i-start-days+1;month=m+2;muted=true;}else day=i-start+1;if(month===0){month=12;year=y-1;}if(month===13){month=1;year=y+1;}const d=`${year}-${pad(month)}-${pad(day)}`,ev=sorted(events.filter(e=>normalizeDate(e.date)===d));const selected=selectedDate===d;const dots=ev.slice(0,2).map(e=>`<span class="day-event ${typeClass(e.type)} ${isPast(e)?"past":""}">${esc(e.store)} · ${esc(e.type)}</span>`).join("");html+=`<button class="calendar-day ${muted?"muted":""} ${selected?"selected":""}" data-date="${d}"><span class="day-number">${day}</span>${dots}${ev.length>2?`<span class="more-events">+${ev.length-2} más</span>`:""}</button>`;}$("#calendar-grid").innerHTML=html;$("#calendar-grid").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectedDate=b.dataset.date;renderCalendar();renderSelectedDay();}));}
+function renderSelectedDay(){const host=$("#selected-day-events");if(!selectedDate){host.innerHTML="";return;}const ev=sorted(events.filter(e=>normalizeDate(e.date)===selectedDate));host.innerHTML=ev.length?`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><div class="selected-day-list">${ev.map(e=>`<div class="selected-day-event"><span>${esc(e.store)} · ${esc(eventTitle(e))}${e.time?` · ${esc(e.time)}`:""}</span>${e.winner?`<span class="winner-line">🏆 Ganador: <strong>${esc(e.winner)}</strong></span>`:""}${isPast(e)?'<span class="status-pill">REALIZADO</span>':registerLink(e,"selected-register")}</div>`).join("")}</div></div>`:`<div class="selected-day-card"><strong>${esc(fmtDate(selectedDate))}</strong><span>No hay torneos publicados para este día.</span></div>`;}
+function parseCSV(text){
+ const rows=[];let row=[],cell="",quoted=false;
+ for(let i=0;i<text.length;i++){
+  const c=text[i],n=text[i+1];
+  if(c==='"'&&quoted&&n==='"'){cell+='"';i++;}
+  else if(c==='"'){quoted=!quoted;}
+  else if(c===","&&!quoted){row.push(cell);cell="";}
+  else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&n==="\n")i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell="";}
+  else cell+=c;
+ }
+ row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
+ const headers=rows.shift().map(x=>x.replace(/^\uFEFF/,"").trim().toLowerCase());
+ return rows
+  .map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]||"").trim()])))
+  .filter(r=>r.fecha||r.date)
+  .map(r=>({date:normalizeDate(r.fecha||r.date),store:r.tienda||r.store,type:r.modalidad||r.tipo||r.type,time:r.hora||r.time,price:r.precio||r.price,url:r.inscripcion||r.enlace||r.url,name:r.nombre||r.torneo||r.name||"",winner:r.ganador||r.winner||""}))
+  .filter(r=>r.date&&r.store&&r.type);
+}
 async function loadSheet(){const url=window.SEVILLA_VGC_CONFIG?.SHEET_CSV_URL;if(!url)return;try{const res=await fetch(url);if(!res.ok)throw new Error("No se pudo cargar la hoja");const data=parseCSV(await res.text());if(data.length)events=data;}catch(err){console.warn("Se mantienen los torneos incluidos en la web:",err);}}
 function init(){const cfg=window.SEVILLA_VGC_CONFIG||{};if(cfg.WHATSAPP_URL)$("#whatsapp-link").href=cfg.WHATSAPP_URL;$("#prev-month").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()-1,1);renderCalendar();});$("#next-month").addEventListener("click",()=>{currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+1,1);renderCalendar();});["store-filter","type-filter","search-filter"].forEach(id=>$("#"+id).addEventListener(id==="search-filter"?"input":"change",renderList));$("#clear-filters").addEventListener("click",()=>{$("#store-filter").value="";$("#type-filter").value="";$("#search-filter").value="";renderList();});loadSheet().then(()=>{populateStores();renderStats();renderFeatured();renderList();renderCalendar();});}
 init();

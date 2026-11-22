@@ -1,42 +1,30 @@
 # Sevilla VGC — calendario de torneos
 
-Web estática responsive para publicar los torneos VGC de Sevilla. Incluye calendario mensual, filtros por tienda/modalidad, tarjetas de próximos eventos y enlaces de inscripción.
+Web estática responsive para publicar los torneos VGC de Sevilla. Incluye calendario mensual, filtros, enlaces de inscripción, ganadores y estado automático de torneos realizados.
 
-## Probar en local
-Abre `index.html` en el navegador. No necesita instalar dependencias ni ejecutar un servidor.
+## Administrar torneos con Google Sheets
 
-## Publicar gratis en GitHub Pages
-1. Crea un repositorio público en GitHub, por ejemplo `sevilla-vgc`.
-2. Sube todos los archivos de esta carpeta a la raíz del repositorio.
-3. En GitHub entra en **Settings → Pages**.
-4. En **Build and deployment**, selecciona **Deploy from a branch**.
-5. Selecciona la rama `main` y la carpeta `/ (root)`, guarda.
-6. GitHub te dará una dirección pública para compartir en WhatsApp.
+La página lee una pestaña de Google Sheets publicada como CSV. Conserva los encabezados y añade una columna `ganador` al final:
 
-## Administrar los torneos con Google Sheets
-1. Crea una hoja de cálculo de Google Sheets.
-2. Importa el archivo `torneos.csv` (Archivo → Importar).
-3. Mantén los encabezados y el formato de fecha `AAAA-MM-DD`.
-4. En Google Sheets: **Archivo → Compartir → Publicar en la web**.
-5. Selecciona la pestaña de torneos y formato **Valores separados por comas (.csv)**. Publica y copia la URL CSV.
-6. Abre `config.js` y pega la URL en `SHEET_CSV_URL`.
-7. Sube el `config.js` actualizado a GitHub.
+`fecha, tienda, modalidad, hora, precio, inscripcion, nombre, ganador`
 
-Columnas:
-- `fecha`: AAAA-MM-DD
-- `tienda`: nombre de la tienda
-- `modalidad`: Challenge, Cup o Especial
-- `hora`: por ejemplo 10:00; puede dejarse vacío
-- `precio`: por ejemplo 6 €; puede dejarse vacío
-- `inscripcion`: URL de inscripción; puede dejarse vacío
-- `nombre`: título del evento, por ejemplo Especial Navidad
+- `fecha`: fecha del torneo. Admite `AAAA-MM-DD` o `DD/MM/AAAA`.
+- `tienda`: tienda organizadora.
+- `modalidad`: Challenge, Cup o Especial.
+- `hora`: por ejemplo 10:00.
+- `precio`: por ejemplo 6 €.
+- `inscripcion`: enlace de inscripción o información.
+- `nombre`: título del evento, por ejemplo Especial Navidad.
+- `ganador`: nombre del ganador. Se puede dejar vacío antes del torneo.
 
-Cuando edites la hoja publicada, la web leerá los cambios al cargar. Si la hoja no está disponible, mostrará los datos de ejemplo incluidos en `app.js`.
+Para publicar la hoja: Google Sheets → Archivo → Compartir → Publicar en la web → selecciona la pestaña → CSV. Copia la URL CSV en `SHEET_CSV_URL` dentro de `config.js`. No reemplaces tu `config.js` actual si ya contiene esa URL.
 
-## Enlaces pendientes
-En el listado original solo se facilitaron enlaces de inscripción para Empire Games (21/11/2026) y Jupiter (22/11/2026). Los demás eventos se muestran sin enlace hasta que se añadan.
+Los torneos anteriores a la fecha actual se etiquetan automáticamente como **REALIZADO** y dejan de mostrar el enlace de inscripción en el listado. Los próximos aparecen normalmente. Al añadir el ganador en la columna `ganador`, se muestra en el detalle del día y en el listado.
 
-## Personalización pendiente
-- Sustituir el enlace de WhatsApp en `config.js`.
-- Confirmar direcciones exactas de las tiendas si se quiere añadir mapa/localización.
-- Añadir enlaces y precios/horarios que falten.
+## Publicar en GitHub Pages
+
+Sube los archivos a la raíz del repositorio y activa Settings → Pages → Deploy from a branch → `main` → `/(root)`.
+
+## Actualizaciones de datos
+
+Los cambios de Google Sheets se reflejan cuando se vuelve a cargar la página y Google actualiza la publicación CSV. Puede haber un pequeño retraso.
